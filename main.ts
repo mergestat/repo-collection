@@ -12,20 +12,16 @@ db.execute(`
   )
 `);
 
-let latestRepoID = db.query(`SELECT id FROM repos ORDER BY id DESC LIMIT 1`)
-const insertRepo = db.prepareQuery(`INSERT INTO repos (id, data) VALUES (?, ?)`)
+const insertRepo = db.prepareQuery(`INSERT INTO repos (id, data) VALUES (?, ?) ON CONFLICT (id) DO UPDATE SET data = excluded.data`)
 
-if (!latestRepoID || latestRepoID.length === 0) {
-  latestRepoID = 0
-} else {
-  latestRepoID = latestRepoID[0]
-}
-
-console.log(`latest repo id: ${latestRepoID}`)
-
-const iterator = octokit.paginate.iterator('GET /repositories', {
+const iterator = octokit.paginate.iterator('GET /search/repositories', {
+  headers: {
+    'X-GitHub-Api-Version': '2022-11-28'
+  },
   per_page: 100,
-  since: latestRepoID
+  q: 'stars:>50',
+  sort: 'stars',
+  order: 'desc'
 });
 
 for await (const { data: repos } of iterator) {
@@ -33,8 +29,9 @@ for await (const { data: repos } of iterator) {
     insertRepo.execute([repo.id, JSON.stringify(repo)])
     console.log(`inserted repo ${repo.id} (${repo.name})`)
   }
-  await sleep(.8)
+  await sleep(2)
 }
 
+insertRepo.finalize();
 db.close();
 Deno.exit(0)
