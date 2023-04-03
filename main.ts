@@ -12,8 +12,14 @@ db.execute(`
   )
 `);
 
-const latestRepoID = db.query(`SELECT id FROM repos ORDER BY id DESC LIMIT 1`)[0][0]
+let latestRepoID = db.query(`SELECT id FROM repos ORDER BY id DESC LIMIT 1`)
 const insertRepo = db.prepareQuery(`INSERT INTO repos (id, data) VALUES (?, ?)`)
+
+if (!latestRepoID || latestRepoID.length === 0) {
+  latestRepoID = 0
+} else {
+  latestRepoID = latestRepoID[0]
+}
 
 console.log(`latest repo id: ${latestRepoID}`)
 
