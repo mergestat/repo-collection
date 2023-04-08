@@ -5,9 +5,6 @@ import { sleep } from "https://deno.land/x/sleep/mod.ts";
 const octokit = new Octokit({ auth: Deno.env.get("GITHUB_TOKEN") });
 const db = new DB("repos.db");
 
-// prepared statement for upserting repos
-const insertRepo = db.prepareQuery(`INSERT INTO repos (id, data) VALUES (?, ?) ON CONFLICT (id) DO UPDATE SET data = excluded.data`)
-
 Deno.addSignalListener("SIGINT", () => {
   insertRepo.finalize();
   db.close();
@@ -21,6 +18,9 @@ db.execute(`
     data JSON
   )
 `);
+
+// prepared statement for upserting repos
+const insertRepo = db.prepareQuery(`INSERT INTO repos (id, data) VALUES (?, ?) ON CONFLICT (id) DO UPDATE SET data = excluded.data`)
 
 const languages = [
   "Python",
